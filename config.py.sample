@@ -1,0 +1,7 @@
+token = ""  # telegram bot token
+api_id = 123456  # telegram api id
+api_hash = "1234567890abcdefghu=ijk"  # telegram api hash
+logs = None  # logs channel id, if none set to None
+# max_filesize = 50000000  # bytes (50MB)
+max_filesize = 2000000000  # bytes (2GB)
+output_folder="./tmp"

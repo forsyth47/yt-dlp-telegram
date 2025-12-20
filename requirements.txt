@@ -1,0 +1,4 @@
+yt-dlp
+pyrogram
+tgcrypto
+redis
