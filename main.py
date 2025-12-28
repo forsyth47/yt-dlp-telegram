@@ -5,6 +5,7 @@ import datetime
 import asyncio
 import uuid
 import shutil
+import json
 from urllib.parse import urlparse
 
 # Fix for Python 3.10+ where get_event_loop() raises RuntimeError if no loop is set
@@ -21,6 +22,14 @@ from pyrogram.errors import MessageNotModified
 import config
 import log as logger
 from users import UserManager
+
+# Try to import Redis client
+try:
+    from redis_client import r as redis_client
+    REDIS_AVAILABLE = True
+except Exception:
+    REDIS_AVAILABLE = False
+    redis_client = None
 
 # Initialize the Pyrogram Client
 app = Client(
@@ -69,7 +78,34 @@ def youtube_url_validation(url):
     return youtube_regex_match
 
 @app.on_message(filters.command(['start', 'help']))
-async def test(client: Client, message: Message):
+async def start_command(client: Client, message: Message):
+    # Check for arguments (Redis short code)
+    if len(message.command) > 1 and REDIS_AVAILABLE:
+        token = message.command[1]
+        key = f"dl:{token}"
+
+        try:
+            raw = redis_client.get(key)
+            if raw:
+                data = json.loads(raw)
+                redis_client.delete(key) # One-time use
+
+                url = data.get('url')
+                title = data.get('title')
+
+                if url:
+                    await message.reply(f"📥 **Found download:**\n`{title}`")
+                    await download_video(message, url, custom_title=title)
+                    return
+                else:
+                    await message.reply("❌ Invalid data in link.")
+                    return
+            else:
+                await message.reply("❌ Link expired or invalid.")
+                return
+        except Exception as e:
+            print(f"Redis error: {e}")
+
     await message.reply(
         "**Send me a video link** and I'll download it for you, works with **YouTube**, **Twitter**, **TikTok**, **Reddit** and more.\n\n_Powered by_ [yt-dlp](https://github.com/yt-dlp/yt-dlp/)",
         disable_web_page_preview=True
@@ -127,7 +163,7 @@ async def show_youtube_selection(message, url):
     except Exception as e:
         await msg.edit(f"Error fetching formats: {e}")
 
-async def download_video(message: Message, url, audio=False, format_id="bestvideo+bestaudio/best"):
+async def download_video(message: Message, url, audio=False, format_id="bestvideo+bestaudio/best", custom_title=None):
     url_info = urlparse(url)
 
     # Auto-detect audio mode for music platforms
@@ -349,6 +385,9 @@ async def download_video(message: Message, url, audio=False, format_id="bestvide
 
         try:
             info = await asyncio.to_thread(run_yt_dlp)
+
+            if custom_title:
+                info['title'] = custom_title
 
             # Stop progress task
             if not progress_task.done():
