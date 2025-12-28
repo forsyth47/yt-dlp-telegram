@@ -27,16 +27,20 @@ from users import UserManager
 try:
     from redis_client import r as redis_client
     REDIS_AVAILABLE = True
-except Exception:
+    print("✅ Redis client loaded successfully.")
+except Exception as e:
     REDIS_AVAILABLE = False
     redis_client = None
+    # print(f"⚠️ Redis client could not be loaded: {e}")
 
 # Initialize the Pyrogram Client
 app = Client(
     "yt_dlp_bot",
     api_id=config.api_id,
     api_hash=config.api_hash,
-    bot_token=config.token
+    bot_token=config.token,
+    workers=50, # Allow more concurrent update handlers
+    max_concurrent_transmissions=10 # Allow multiple files to be uploaded simultaneously
 )
 
 user_manager = UserManager()
@@ -79,13 +83,16 @@ def youtube_url_validation(url):
 
 @app.on_message(filters.command(['start', 'help']))
 async def start_command(client: Client, message: Message):
+    print(f"Start command received. Args: {message.command}, Redis Available: {REDIS_AVAILABLE}")
     # Check for arguments (Redis short code)
     if len(message.command) > 1 and REDIS_AVAILABLE:
         token = message.command[1]
         key = f"dl:{token}"
+        print(f"Checking Redis for key: {key}")
 
         try:
             raw = redis_client.get(key)
+            print(f"Redis result: {raw}")
             if raw:
                 data = json.loads(raw)
                 redis_client.delete(key) # One-time use
@@ -95,7 +102,7 @@ async def start_command(client: Client, message: Message):
 
                 if url:
                     await message.reply(f"📥 **Found download:**\n`{title}`")
-                    await download_video(message, url, custom_title=title)
+                    asyncio.create_task(download_video(message, url, custom_title=title))
                     return
                 else:
                     await message.reply("❌ Invalid data in link.")
@@ -352,11 +359,15 @@ async def download_video(message: Message, url, audio=False, format_id="bestvide
             'outtmpl': output_path,
             'progress_hooks': [progress],
             'max_filesize': config.max_filesize,
-            # 'http_chunk_size': 52428800, # 50MB
+            'http_chunk_size': 10485760, # 10MB
             'remote_components': {'ejs:github'},
-            'concurrent_fragment_downloads': 5,
+            'concurrent_fragment_downloads': 10,
             'quiet': False,
             'noprogress': False,
+            'retries': 3,
+            'fragment_retries': 3,
+            'socket_timeout': 10, # Retry stuck fragments quickly
+            'buffersize': 1024 * 1024 * 10, # 10MB buffer
         }
 
         if audio:
@@ -620,7 +631,7 @@ async def download_command(client, message):
         return
 
     await logger.log(app, message, f"Download command received: {text}", level="INFO")
-    await download_video(message, text)
+    asyncio.create_task(download_video(message, text))
 
 @app.on_message(filters.command(['audio']))
 async def download_audio_command(client, message):
@@ -630,7 +641,7 @@ async def download_audio_command(client, message):
         return
 
     await logger.log(app, message, f"Audio command received: {text}", level="INFO")
-    await download_video(message, text, True)
+    asyncio.create_task(download_video(message, text, True))
 
 @app.on_message(filters.command(['sendVideo']))
 async def send_video_command(client, message):
@@ -719,19 +730,19 @@ async def yt_callback(client, call: CallbackQuery):
     await logger.log(app, call.message, f"YouTube selection made: {type} for {url}", level="INFO")
 
     if type == "audio":
-        await download_video(target_message, url, audio=True)
+        asyncio.create_task(download_video(target_message, url, audio=True))
     elif type == "video":
         res = data[2]
         # Select specific resolution + best audio (Prioritize H.264/AAC)
         fmt = f"bestvideo[height={res}][vcodec^=avc1]+bestaudio[acodec^=mp4a]/bestvideo[height={res}]+bestaudio/best[height={res}]"
-        await download_video(target_message, url, audio=False, format_id=fmt)
+        asyncio.create_task(download_video(target_message, url, audio=False, format_id=fmt))
 
 @app.on_callback_query()
 async def callback(client, call: CallbackQuery):
     if call.message.reply_to_message and call.from_user.id == call.message.reply_to_message.from_user.id:
         url = get_text(call.message.reply_to_message)
         await call.message.delete()
-        await download_video(call.message.reply_to_message, url, format_id=f"{call.data}+bestaudio")
+        asyncio.create_task(download_video(call.message.reply_to_message, url, format_id=f"{call.data}+bestaudio"))
     else:
         await call.answer("You didn't send the request", show_alert=True)
 
@@ -742,7 +753,7 @@ async def handle_private_messages(client, message):
         return
 
     await logger.log(app, message, f"Private message received: {text}", level="INFO")
-    await download_video(message, text)
+    asyncio.create_task(download_video(message, text))
 
 if __name__ == "__main__":
     async def main():

@@ -54,8 +54,7 @@ class UserManager:
     def get_quality(self, user_id):
         user = self.get_user(user_id)
         if user:
-            return user.get("quality", "ask")
+            return user.get("quality", "720")
         else:
             self.add_user(user_id)
             return "720"
-        

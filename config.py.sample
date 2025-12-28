@@ -5,3 +5,10 @@ logs = None  # logs channel id, if none set to None
 # max_filesize = 50000000  # bytes (50MB)
 max_filesize = 2000000000  # bytes (2GB)
 output_folder="./tmp"
+
+### Redis configuration
+redis_enabled = False  # Enable or disable Redis usage (I've added redis for my own use, so that it integrates with my other bots, but its not needed for anyone else)
+# Uses default options below, uncomment to customize if needed
+# redis_host = "localhost"
+# redis_port = 6379
+# redis_db = 0
