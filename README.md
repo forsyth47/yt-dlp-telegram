@@ -1,10 +1,11 @@
-# yt-dlp Telegram Bot
+# TheBFDBot
+> acronym for "The BestFlippingDownloader Bot"
 
-A simple, high-performance Telegram bot to download videos from YouTube, TikTok, Twitter, Reddit, and more using [yt-dlp](https://github.com/yt-dlp/yt-dlp).
+A simple, high-performance Telegram bot to download videos from [Supported Sites](https://ytdl-org.github.io/youtube-dl/supportedsites.html) using [yt-dlp](https://github.com/yt-dlp/yt-dlp) and [spotdl](https://github.com/spotDL/spotify-downloader).
 
 ## Features
 
-- 🎥 **Video Download**: Supports thousands of sites via yt-dlp, check here [Supported sites](https://ytdl-org.github.io/youtube-dl/supportedsites.html).
+- 🎥 **Video Download**: Supports thousands of sites via yt-dlp, check here for the [Supported sites](https://ytdl-org.github.io/youtube-dl/supportedsites.html).
 - 🎵 **Audio Extraction**: Convert videos to MP3.
 - ⚙️ **Quality Selection**: Choose video resolution (1080p, 720p, etc.).
 - 🚀 **High Performance**: Concurrent downloads and uploads.
@@ -61,10 +62,12 @@ A simple, high-performance Telegram bot to download videos from YouTube, TikTok,
    python main.py
    ```
 
----
+<!-- ---
 How it works:
-downloads -> instead of uploading create webserver -> expose the tmp dir to public -> pass the public url to telegram -> uploads instantly
+downloads -> instead of uploading create webserver -> expose the tmp dir to public -> pass the public url to telegram -> uploads instantly -->
 
 ## Credits
 
-Inspired by and based on the idea from [ssebastianoo/yt-dlp-telegram](https://github.com/ssebastianoo/yt-dlp-telegram).
+- [yt-dlp](https://github.com/yt-dlp/yt-dlp)<br>
+- [spotdl](https://github.com/spotDL/spotify-downloader)<br>
+- Inspired by and based on the idea from [ssebastianoo/yt-dlp-telegram](https://github.com/ssebastianoo/yt-dlp-telegram).

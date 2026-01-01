@@ -5,6 +5,7 @@ uvloop
 
 # YT-DLP for downloading media
 yt-dlp
+# curl-cffi # (optional) for impersonation support in yt-dlp https://github.com/yt-dlp/yt-dlp#impersonation, install only if something goes wrong with the default downloader
 
 # Redis client
 redis
