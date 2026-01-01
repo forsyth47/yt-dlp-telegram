@@ -123,6 +123,7 @@ async def download_real(url, video_id, audio, format_id, progress_callback):
         'fragment_retries': 3,
         'socket_timeout': 10,
         'buffersize': 1024 * 1024 * 10,
+        'noplaylist': True,
     }
 
     if audio:
