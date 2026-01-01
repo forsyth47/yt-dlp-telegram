@@ -6,7 +6,8 @@ class UrlValidator:
         self.url = url.strip()
 
     def isUrl(self) -> bool:
-        pattern = r'^(https?://)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(/.*)?$'
+        # Updated regex to support optional port numbers
+        pattern = r'^(https?://)?([a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(:[0-9]+)?(/.*)?$'
         result  = re.match(pattern, self.url) is not None
         return result
 
